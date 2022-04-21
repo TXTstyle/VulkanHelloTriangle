@@ -4,14 +4,15 @@
 #include <iostream>
 #include <stdexcept>
 #include <cstdlib>
+#include <vector>
 
 class HelloTriangleApplication {
 public:
-    void run() {
-        initWindow();
-        initVulkan();
-        mainLoop();
-        cleanup();
+    void Run() {
+        InitWindow();
+        InitVulkan();
+        MainLoop();
+        Cleanup();
     }
 
 private:
@@ -22,7 +23,22 @@ private:
 
     VkInstance instance;
 
-    void createInstance() {
+    void CheckVkExtensions() {
+        uint32_t extensionCount = 0;
+        vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
+
+        std::vector<VkExtensionProperties> extensions(extensionCount);
+        vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
+
+        std::cout << "Extension:\n";
+        for (const auto& extension : extensions)
+        {
+            std::cout << '\t' << extension.extensionName << '\n';
+        }
+        
+    }
+
+    void CreateInstance() {
         VkApplicationInfo appInfo{};
         appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
         appInfo.pApplicationName = "Hello Triangle";
@@ -42,10 +58,20 @@ private:
 
         createInfo.enabledExtensionCount = glfwExtensionCount;
         createInfo.ppEnabledExtensionNames = glfwExtensions;
+        createInfo.enabledLayerCount = 0;
+
+        CheckVkExtensions();
+
+        //VkResult result = vkCreateInstance(&createInfo, nullptr, &instance);
+        if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS)
+        {
+            throw std::runtime_error("failed to create instance");
+        }
+        
     }
 
 
-    void initWindow() {
+    void InitWindow() {
         glfwInit();
 
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -54,19 +80,22 @@ private:
         window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
     }
 
-    void initVulkan() {
-        createInstance();
+    void InitVulkan() {
+        CreateInstance();
     }
 
-    void mainLoop() {
+    void MainLoop() {
         while (!glfwWindowShouldClose(window))
         {
-            glfwPollEvents();
+            //glfwPollEvents();
+            glfwWaitEvents();
         }
         
     }
 
-    void cleanup() {
+    void Cleanup() {
+        vkDestroyInstance(instance, nullptr);
+
         glfwDestroyWindow(window);
 
         glfwTerminate();
@@ -77,7 +106,7 @@ int main() {
     HelloTriangleApplication app;
 
     try {
-        app.run();
+        app.Run();
     } catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;
         return EXIT_FAILURE;
