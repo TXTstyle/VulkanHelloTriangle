@@ -5,19 +5,36 @@ INCLUDE	:=	include
 SRC		:=	src
 BIN		:=	bin
 
-LIBS	:=	-lglfw -lvulkan -ldl -lpthread -lX11 -lXxf86vm -lXrandr -lXi
-EXE		:=	main 
+LIBS	:=	-lglfw -lvulkan -ldl -lpthread
+EXE		:=	main
 
-all: $(BIN)/$(EXE)
+DEPS	:=	$(wildcard $(SRC)/*.c*)
+OBJ		:=	$(patsubst $(SRC)/%.c*, $(BIN)/%.o, $(DEPS))
 
-run: clean all
+$(BIN)/%.o: $(SRC)/%.cpp
+	mkdir -p $(BIN)
+	$(CXX) -c -o $@ $< $(FLAGS) -I$(INCLUDE)
+
+$(BIN)/$(EXE): $(OBJ)
+	$(CXX) $(FLAGS) -I$(INCLUDE) -o $@ $^ $(LIBS) -fuse-ld=mold
+
+
+run: $(BIN)/$(EXE)
 		./$(BIN)/$(EXE)
 
-$(BIN)/$(EXE): $(SRC)/*.cpp
-	$(CXX) $(FLAGS) -I $(INCLUDE) $^ -o $@ $(LIBS)
 
 start:
+		clear
 		./$(BIN)/$(EXE)
 
 clean:
-		-rm $(BIN)/*
+		rm -rf $(BIN)/*
+
+setup:
+	mkdir -p $(BIN)
+	mkdir -p $(SRC)
+	mkdir -p $(INCLUDE)
+	touch $(SRC)/main.cpp
+	echo '-Iinclude/' > compile_flags.txt
+	echo -e "IndentWidth: 4\nBasedOnStyle: LLVM\nPointerAlignment: Left\nSortIncludes: false" > .clang-format
+	clear
