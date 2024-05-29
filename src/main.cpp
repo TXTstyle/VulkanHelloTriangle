@@ -1,5 +1,7 @@
+#include <ostream>
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+#include <vulkan/vulkan_core.h>
 
 #include <fstream>
 #include <cstddef>
@@ -131,9 +133,11 @@ class HelloTriangleApplication {
 
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+        glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+        glfwWindowHint(GLFW_FLOATING, GLFW_TRUE);
 
         window =
-            glfwCreateWindow(WIDTH, HEIGHT, "dev Vulkan", nullptr, nullptr);
+            glfwCreateWindow(WIDTH, HEIGHT, "VulkanHelloTriangle", nullptr, nullptr);
     }
 
     void initVulkan() {
@@ -143,6 +147,7 @@ class HelloTriangleApplication {
         pickPhysicalDevice();
         createLogicalDevice();
         createSwapChain();
+        createImageViews();
         createRenderPass();
         createGraphicsPipeline();
         createFramebuffers();
@@ -213,9 +218,12 @@ class HelloTriangleApplication {
 
     void drawFrame() {
         vkWaitForFences(device, 1, &inFlightFence, VK_TRUE, UINT64_MAX);
+        vkResetFences(device, 1, &inFlightFence);
 
         uint32_t imageIndex;
-        vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+        vkAcquireNextImageKHR(device, swapChain, UINT64_MAX,
+                              imageAvailableSemaphore, VK_NULL_HANDLE,
+                              &imageIndex);
 
         vkResetCommandBuffer(commandBuffer, 0);
         recordCommandBuffer(commandBuffer, imageIndex);
@@ -224,7 +232,8 @@ class HelloTriangleApplication {
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
         VkSemaphore waitSemaphores[] = {imageAvailableSemaphore};
-        VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+        VkPipelineStageFlags waitStages[] = {
+            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
         submitInfo.waitSemaphoreCount = 1;
         submitInfo.pWaitSemaphores = waitSemaphores;
         submitInfo.pWaitDstStageMask = waitStages;
@@ -235,7 +244,8 @@ class HelloTriangleApplication {
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores = signalSemaphores;
 
-        if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFence) != VK_SUCCESS) {
+        if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFence) !=
+            VK_SUCCESS) {
             throw std::runtime_error("failed to submit draw command buffer!");
         }
 
