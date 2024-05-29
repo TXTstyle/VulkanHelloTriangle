@@ -18,6 +18,9 @@ $(BIN)/%.o: $(SRC)/%.cpp
 $(BIN)/$(EXE): $(OBJ)
 	$(CXX) $(FLAGS) -I$(INCLUDE) -o $@ $^ $(LIBS) -fuse-ld=mold
 
+shaders:
+		glslc ./shaders/shader.vert -o ./shaders/vert.spv
+		glslc ./shaders/shader.frag -o ./shaders/frag.spv
 
 run: $(BIN)/$(EXE)
 		./$(BIN)/$(EXE)
