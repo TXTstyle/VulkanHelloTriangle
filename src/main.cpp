@@ -353,10 +353,8 @@ class HelloTriangleApplication {
         return imageView;
     }
 
-    void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width,
+    void copyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer buffer, VkImage image, uint32_t width,
                            uint32_t height) {
-        VkCommandBuffer commandBuffer = beginSingleTimeCommand(commandPool);
-
         VkBufferImageCopy region{};
         region.bufferOffset = 0;
         region.bufferRowLength = 0;
@@ -378,13 +376,11 @@ class HelloTriangleApplication {
                                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
                                &region);
 
-        endSingleTimeCommand(commandBuffer, commandPool);
     }
 
-    void transitionImageLayout(VkImage image, VkFormat format,
+    void transitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format,
                                VkImageLayout oldLayout,
                                VkImageLayout newLayout) {
-        VkCommandBuffer commandBuffer = beginSingleTimeCommand(commandPool);
 
         VkImageMemoryBarrier barrier{};
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -424,7 +420,6 @@ class HelloTriangleApplication {
         vkCmdPipelineBarrier(commandBuffer, sourceStage, destinationStage, 0, 0,
                              nullptr, 0, nullptr, 1, &barrier);
 
-        endSingleTimeCommand(commandBuffer, commandPool);
     }
 
     VkCommandBuffer beginSingleTimeCommand(VkCommandPool commandPool) {
@@ -492,15 +487,19 @@ class HelloTriangleApplication {
                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage,
                     textureImageMemory);
 
-        transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB,
+        VkCommandBuffer commandBuffer = beginSingleTimeCommand(commandPool);
+
+        transitionImageLayout(commandBuffer, textureImage, VK_FORMAT_R8G8B8A8_SRGB,
                               VK_IMAGE_LAYOUT_UNDEFINED,
                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-        copyBufferToImage(stagingBuffer, textureImage,
+        copyBufferToImage(commandBuffer, stagingBuffer, textureImage,
                           static_cast<uint32_t>(texWidth),
                           static_cast<uint32_t>(texHeight));
-        transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB,
+        transitionImageLayout(commandBuffer, textureImage, VK_FORMAT_R8G8B8A8_SRGB,
                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                               VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+        endSingleTimeCommand(commandBuffer, commandPool);
 
         vkDestroyBuffer(device, stagingBuffer, nullptr);
         vkFreeMemory(device, stagingBufferMemory, nullptr);
