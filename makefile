@@ -1,5 +1,5 @@
 CXX		:=	clang++
-FLAGS	:=	-Wall -Wextra -std=c++17 -O2
+FLAGS	:=	-Wall -Wextra -std=c++17 -O3
 
 INCLUDE	:=	include
 SRC		:=	src
